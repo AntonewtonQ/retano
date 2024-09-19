@@ -1,4 +1,5 @@
 import Banner from "./components/banner/Banner";
+import Footer from "./components/footer/Footer";
 import Totals from "./components/totals/Totals";
 
 const App = () => {
@@ -10,6 +11,7 @@ const App = () => {
       <div className="p-6">
         <Totals />
       </div>
+      <Footer />
     </>
   );
 };

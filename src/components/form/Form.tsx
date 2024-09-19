@@ -10,11 +10,15 @@ const Form: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Formatação: converter para minúsculas e remover espaços em branco extras
+    const nomeDistritoFormatado = nomeDistrito.trim().toLowerCase();
+    const nomeClubeFormatado = nomeClube.trim().toLowerCase();
+
     try {
       await addDoc(collection(db, "inscritos"), {
         nomeCompleto,
-        nomeDistrito,
-        nomeClube,
+        nomeDistrito: nomeDistritoFormatado,
+        nomeClube: nomeClubeFormatado,
         timestamp: new Date(),
       });
       alert("Inscrição realizada com sucesso!");
@@ -25,6 +29,7 @@ const Form: React.FC = () => {
       console.error("Erro ao inscrever:", error);
     }
   };
+
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <label className="text-white">

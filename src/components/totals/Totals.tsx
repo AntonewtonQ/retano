@@ -8,13 +8,14 @@ interface Inscrito {
   nomeClube: string;
 }
 
+const capitalizeFirstLetter = (text: string) => {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
 const Totals: React.FC = () => {
   const [totalInscritos, setTotalInscritos] = useState<number>(0);
   const [inscritosPorDistrito, setInscritosPorDistrito] = useState<
-    Map<string, number>
-  >(new Map());
-  const [inscritosPorClube, setInscritosPorClube] = useState<
-    Map<string, number>
+    Map<string, { total: number; clubes: Map<string, number> }>
   >(new Map());
   const [inscritosList, setInscritosList] = useState<Inscrito[]>([]);
 
@@ -30,21 +31,26 @@ const Totals: React.FC = () => {
       // Totals
       setTotalInscritos(inscritos.length);
 
-      // Totals by district (insensitive to case)
+      // Totals by district and clubs (case insensitive)
       const distritoCount = inscritos.reduce((acc, inscrito) => {
         const nomeDistritoLower = inscrito.nomeDistrito.toLowerCase();
-        acc.set(nomeDistritoLower, (acc.get(nomeDistritoLower) || 0) + 1);
-        return acc;
-      }, new Map<string, number>());
-      setInscritosPorDistrito(distritoCount);
-
-      // Totals by club (insensitive to case)
-      const clubeCount = inscritos.reduce((acc, inscrito) => {
         const nomeClubeLower = inscrito.nomeClube.toLowerCase();
-        acc.set(nomeClubeLower, (acc.get(nomeClubeLower) || 0) + 1);
+
+        if (!acc.has(nomeDistritoLower)) {
+          acc.set(nomeDistritoLower, { total: 0, clubes: new Map() });
+        }
+
+        const distritoData = acc.get(nomeDistritoLower)!;
+        distritoData.total += 1;
+        distritoData.clubes.set(
+          nomeClubeLower,
+          (distritoData.clubes.get(nomeClubeLower) || 0) + 1
+        );
+
         return acc;
-      }, new Map<string, number>());
-      setInscritosPorClube(clubeCount);
+      }, new Map<string, { total: number; clubes: Map<string, number> }>());
+
+      setInscritosPorDistrito(distritoCount);
     };
 
     fetchInscritos();
@@ -65,43 +71,41 @@ const Totals: React.FC = () => {
 
       <div className="mb-8">
         <h3 className="text-xl font-semibold text-gray-700">
-          Inscritos por Distrito:
+          Inscritos por Distrito e Clube:
         </h3>
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 space-y-4">
           {Array.from(inscritosPorDistrito.entries()).map(
-            ([distrito, total]) => (
-              <li
-                key={distrito}
-                className="flex justify-between items-center bg-yellow-100 p-4 rounded-lg"
-              >
-                <span className="text-lg font-medium">
-                  {distrito.charAt(0).toUpperCase() + distrito.slice(1)}
-                </span>
-                <span className="text-xl font-bold text-yellow-600">
-                  {total}
-                </span>
+            ([distrito, { total, clubes }]) => (
+              <li key={distrito} className="bg-yellow-100 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-lg font-medium">
+                    {capitalizeFirstLetter(distrito)}
+                  </span>
+                  <span className="text-xl font-bold text-yellow-600">
+                    {total} inscritos
+                  </span>
+                </div>
+                {/* List of clubs under this district */}
+                <ul className="mt-2 ml-6 list-decimal space-y-2">
+                  {Array.from(clubes.entries()).map(
+                    ([clube, totalClube], index) => (
+                      <li
+                        key={clube}
+                        className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm"
+                      >
+                        <span className="text-md font-medium">
+                          {index + 1}. {capitalizeFirstLetter(clube)}
+                        </span>
+                        <span className="text-md text-yellow-600 font-semibold">
+                          {totalClube} inscritos
+                        </span>
+                      </li>
+                    )
+                  )}
+                </ul>
               </li>
             )
           )}
-        </ul>
-      </div>
-
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold text-gray-700">
-          Inscritos por Clube:
-        </h3>
-        <ul className="mt-4 space-y-2">
-          {Array.from(inscritosPorClube.entries()).map(([clube, total]) => (
-            <li
-              key={clube}
-              className="flex justify-between items-center bg-yellow-100 p-4 rounded-lg"
-            >
-              <span className="text-lg font-medium">
-                {clube.charAt(0).toUpperCase() + clube.slice(1)}
-              </span>
-              <span className="text-xl font-bold text-yellow-600">{total}</span>
-            </li>
-          ))}
         </ul>
       </div>
 
@@ -121,8 +125,8 @@ const Totals: React.FC = () => {
                   {index + 1}. {inscrito.nomeCompleto}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Distrito: {inscrito.nomeDistrito} | Clube:{" "}
-                  {inscrito.nomeClube}
+                  Distrito: {capitalizeFirstLetter(inscrito.nomeDistrito)} |
+                  Clube: {capitalizeFirstLetter(inscrito.nomeClube)}
                 </p>
               </div>
             </li>
