@@ -1,4 +1,4 @@
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useState } from "react";
 import { db } from "../../firebase";
 
@@ -15,12 +15,29 @@ const Form: React.FC = () => {
     const nomeClubeFormatado = nomeClube.trim().toLowerCase();
 
     try {
-      await addDoc(collection(db, "inscritos"), {
+      // Verificar se já existe uma inscrição igual
+      const inscritosRef = collection(db, "inscritos");
+      const q = query(
+        inscritosRef,
+        where("nomeCompleto", "==", nomeCompleto),
+        where("nomeDistrito", "==", nomeDistritoFormatado),
+        where("nomeClube", "==", nomeClubeFormatado)
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        alert("Inscrição já existe.");
+        return;
+      }
+
+      // Se não houver duplicata, criar nova inscrição
+      await addDoc(inscritosRef, {
         nomeCompleto,
         nomeDistrito: nomeDistritoFormatado,
         nomeClube: nomeClubeFormatado,
         timestamp: new Date(),
       });
+
       alert("Inscrição realizada com sucesso!");
       setNomeCompleto("");
       setNomeDistrito("");
